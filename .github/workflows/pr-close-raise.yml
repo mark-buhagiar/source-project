@@ -21,4 +21,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - run: gh pr create --base ${{ env.BASE_BRANCH }} --head ${{ env.HEAD_BRANCH }} --title "[Downstream merge] ${{ env.HEAD_BRANCH }} into ${{ env.BASE_BRANCH }}" --body "Automatically generated PR for downstream merge"
+      - run: |
+          openPr=$(gh pr list --base REL3.6.0 --head REL3.5.0 --json id --jq .[].id)
+          if [[ -z $openPr ]]
+          then
+            gh pr create --base ${{ env.BASE_BRANCH }} --head ${{ env.HEAD_BRANCH }} --title "[Downstream merge] ${{ env.HEAD_BRANCH }} into ${{ env.BASE_BRANCH }}" --body "Automatically generated PR for downstream merge"
+          fi
