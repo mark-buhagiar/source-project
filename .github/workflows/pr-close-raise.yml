@@ -1,0 +1,17 @@
+name: PR merged into REL3.5.0
+
+on:
+  pull_request:
+    types:
+      - closed
+
+env:
+  BASE_BRANCH: REL3.6.0
+  HEAD_BRANCH: REL3.5.0
+
+jobs:
+  pr-merged:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh pr create --base ${{ env.BASE_BRANCH }} --head ${{ env.HEAD_BRANCH }} --title "[Downstream merge] ${{ env.HEAD_BRANCH }} into ${{ env.BASE_BRANCH }}" --body "Automatically generated PR for downstream merge"
