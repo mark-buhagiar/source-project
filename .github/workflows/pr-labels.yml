@@ -2,29 +2,69 @@ name: PR merged into REL3.5.0
 
 on:
   pull_request_review:
-    types: [submitted, dismissed]
+    types: [submitted]
+  pull_request:
+    types: [assigned,unassigned]
 
 env:
   GH_TOKEN: ${{ github.token }}
 
 jobs:
-  handle-pr-review-status:
+  handle-pull-request-review:
     runs-on: ubuntu-latest
+    if: github.event_name	== 'pull_request_review'
     steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: PR submitted and approved
         if: always() && github.event.review.state == 'approved'
         run: |
-          prUrl="${{ github.event.review.pull_request_url }}"
-          gh pr edit $prUrl --add-label approved
+          prNum="${{ github.event.pull_request.number }}"
+          gh pr edit $prNum --remove-label "approved,awaiting-review,changes-requested"
+
+      - name: PR submitted and approved
+        if: always() && github.event.review.state == 'approved'
+        run: |
+          prNum="${{ github.event.pull_request.number }}"
+          gh pr edit $prNum --add-label approved
           
       - name: PR dismissed
         if: always() && github.event.review.state == 'dismissed'
         run: |
-          prUrl="${{ github.event.review.pull_request_url }}"
-          gh pr edit $prUrl --add-label awaiting-review
+          prNum="${{ github.event.pull_request.number }}"
+          gh pr edit $prNum --add-label awaiting-review
           
       - name: PR submitted and approved
         if: always() && github.event.review.state == 'changes_requested'
         run: |
-          prUrl="${{ github.event.review.pull_request_url }}"
-          gh pr edit $prUrl --add-label changes-requested
+          prNum="${{ github.event.pull_request.number }}"
+          gh pr edit $prNum --add-label changes-requested
+
+  handle-pull-request-review-assigned:
+    runs-on: ubuntu-latest
+    if: github.event_name	== 'pull_request' && github.event.action	== 'assigned'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: PR assigned
+        run: |
+          prNum="${{ github.event.pull_request.number }}"
+          gh pr edit $prNum --add-label assigned
+
+  handle-pull-request-review-unassigned:
+    runs-on: ubuntu-latest
+    if: github.event_name	== 'pull_request' && github.event.action	== 'unassigned'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: PR assigned
+        run: |
+          prNum="${{ github.event.pull_request.number }}"
+          gh pr edit $prNum --remove-label assigned
+          
