@@ -2,6 +2,8 @@ name: PR merged into REL3.5.0
 
 on:
   pull_request:
+    branches:
+      - REL3.5.0
     types:
       - closed
 
