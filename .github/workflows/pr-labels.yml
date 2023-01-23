@@ -1,0 +1,30 @@
+name: PR merged into REL3.5.0
+
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  handle-pr-review-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR submitted and approved
+        if: always() && github.event.review.state == 'approved'
+        run: |
+          prUrl="${{ github.event.review.pull_request_url }}"
+          gh pr edit $prUrl --add-label approved
+          
+      - name: PR dismissed
+        if: always() && github.event.review.state == 'dismissed'
+        run: |
+          prUrl="${{ github.event.review.pull_request_url }}"
+          gh pr edit $prUrl --add-label awaiting-review
+          
+      - name: PR submitted and approved
+        if: always() && github.event.review.state == 'changes_requested'
+        run: |
+          prUrl="${{ github.event.review.pull_request_url }}"
+          gh pr edit $prUrl --add-label changes-requested
