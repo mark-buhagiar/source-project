@@ -1,0 +1,51 @@
+name: PR Labeller
+
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+  pull_request:
+    types: [assigned, unassigned, review_requested, review_request_removed, synchronize, edited]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  label-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Label
+        run: |           
+          prNum="${{ github.event.pull_request.number }}"
+          gh pr edit $prNum --remove-label "conflicts,reviewer-assigned,approved,changes-requested"
+          metadata=$(gh pr view $prNum --json mergeable,reviewRequests,reviews)
+
+          hasConflicts=$(jq -c -n '$data.mergeable == "CONFLICTING"' --argjson data "$metadata")
+          if [[ $hasConflicts == true ]]
+          then
+            gh pr edit $prNum --add-label conflicts
+          fi
+
+          reviewerCount=$(jq -c -n '$data.reviewRequests | length' --argjson data "$metadata")
+          if [[ $reviewerCount -gt 0 ]]
+          then
+            gh pr edit $prNum --add-label reviewer-assigned
+          fi
+
+          latestReviewState=$(jq -r -c -n '$data.reviews | last | .state' --argjson data "$metadata")
+          if [[ $latestReviewState == "APPROVED" ]]
+          then
+            gh pr edit $prNum --add-label approved
+          fi
+
+          if [[ $latestReviewState == "CHANGES_REQUESTED" ]]
+          then
+            gh pr edit $prNum --add-label changes-requested
+          fi
